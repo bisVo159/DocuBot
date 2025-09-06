@@ -481,7 +481,7 @@ date_slot,specialization,doctor_name,is_available,patient_to_attend
 07-08-2024 15:30,general_dentist,emily johnson,True,
 07-08-2024 16:00,general_dentist,emily johnson,True,
 07-08-2024 16:30,general_dentist,emily johnson,False,1000012.0
-08-08-2024 08:00,general_dentist,emily johnson,False,10232303.0
+08-08-2024 08:00,general_dentist,emily johnson,True,
 08-08-2024 08:30,general_dentist,emily johnson,True,
 08-08-2024 09:00,general_dentist,emily johnson,False,1000005.0
 08-08-2024 09:30,general_dentist,emily johnson,False,1000041.0

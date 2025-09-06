@@ -2,6 +2,10 @@ import pandas as pd
 from langchain_core.tools import tool
 from data_models.models import *
 from core.config import DoctorName, Specialization
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CSV_PATH = os.path.join(BASE_DIR, "data", "doctor_availability.csv")
 
 def convert_to_am_pm(time):
     """Convert time from 24-hour format to 12-hour AM/PM format."""
@@ -23,7 +27,7 @@ def check_availability_by_doctor(doctor_name: DoctorName, desired_date: DateMode
     Returns:
         A message with a list if available time slots for the doctor on the selected date or a message indicating no availability.
     """
-    df= pd.read_csv("../data/doctor_availability.csv")
+    df= pd.read_csv(CSV_PATH )
     available_slots = df[
         (df['doctor_name'].str.lower() == doctor_name.lower()) & 
         (df['date_slot'].str.startswith(desired_date.date)) &
@@ -35,9 +39,7 @@ def check_availability_by_doctor(doctor_name: DoctorName, desired_date: DateMode
     else:
         slots_str = ', '.join(available_slots)
         return f"Available slots for Dr. {doctor_name} on {desired_date.date} are: {slots_str}."
-    
 
-@tool
 def check_availability_by_specialization(specialization: Specialization, desired_date: DateModel):
     """
     Check availability for doctors of a given specialization on a specific validated date.
@@ -49,7 +51,7 @@ def check_availability_by_specialization(specialization: Specialization, desired
     Returns:
         A message with a list if available time slots for doctors of the given specialization on the selected date or a message indicating no availability.
     """
-    df= pd.read_csv("../data/doctor_availability.csv")
+    df= pd.read_csv(CSV_PATH )
     available_slots = df[
         (df['specialization'].str.lower() == specialization.lower()) & 
         (df['date_slot'].str.startswith(desired_date.date)) &
@@ -79,7 +81,7 @@ def book_appointment(doctor_name: DoctorName, appointment_datetime: DateTimeMode
     Returns:
         A confirmation message if the appointment is successfully booked or a message indicating unavailability.
     """
-    df= pd.read_csv("../data/doctor_availability.csv")
+    df= pd.read_csv(CSV_PATH )
     slot_str = f"{appointment_datetime.datetime}"
     is_available = not df[
         (df['doctor_name'].str.lower() == doctor_name.lower()) & 
@@ -93,7 +95,7 @@ def book_appointment(doctor_name: DoctorName, appointment_datetime: DateTimeMode
             (df['date_slot'] == slot_str), ['is_available','patient_to_attend']
         ] = [False,patient_id.id]
 
-        df.to_csv("../data/doctor_availability.csv", index=False)
+        df.to_csv(CSV_PATH, index=False)
         return f"Appointment successfully booked with Dr. {doctor_name} on {appointment_datetime.datetime} for patient ID {patient_id.id}."
     else:
         return f"Sorry, Dr. {doctor_name} is not available on {appointment_datetime.datetime}. Please choose a different time."
@@ -111,7 +113,7 @@ def cancel_appointment(doctor_name: DoctorName, appointment_datetime: DateTimeMo
     Returns:
         A confirmation message if the appointment is successfully canceled or a message indicating no such appointment exists.
     """
-    df= pd.read_csv("../data/doctor_availability.csv")
+    df= pd.read_csv(CSV_PATH )
     slot_str = f"{appointment_datetime.datetime}"
     appointment_exists = not df[
         (df['doctor_name'].str.lower() == doctor_name.lower()) & 
@@ -127,7 +129,7 @@ def cancel_appointment(doctor_name: DoctorName, appointment_datetime: DateTimeMo
             (df['patient_to_attend'] == patient_id.id), ['is_available','patient_to_attend']
         ] = [True, None]
 
-        df.to_csv("../data/doctor_availability.csv", index=False)
+        df.to_csv(CSV_PATH, index=False)
         return f"Appointment with Dr. {doctor_name} on {appointment_datetime.datetime} for patient ID {patient_id.id} has been successfully canceled."
     else:
         return f"No existing appointment found with Dr. {doctor_name} on {appointment_datetime.datetime} for patient ID {patient_id.id}."
@@ -147,7 +149,7 @@ def reschedule_appointment(doctor_name: DoctorName, old_appointment_datetime: Da
     Returns:
         A confirmation message if the appointment is successfully rescheduled or a message indicating failure due to unavailability or no existing appointment.
     """
-    df= pd.read_csv("../data/doctor_availability.csv")
+    df= pd.read_csv(CSV_PATH )
     old_slot_str = f"{old_appointment_datetime.datetime}"
     new_slot_str = f"{new_appointment_datetime.datetime}"
     
@@ -178,7 +180,7 @@ def reschedule_appointment(doctor_name: DoctorName, old_appointment_datetime: Da
             (df['date_slot'] == new_slot_str), ['is_available','patient_to_attend']
         ] = [False, patient_id.id]
 
-        df.to_csv("../data/doctor_availability.csv", index=False)
+        df.to_csv(CSV_PATH, index=False)
         return f"Appointment with Dr. {doctor_name} has been successfully rescheduled from {old_appointment_datetime.datetime} to {new_appointment_datetime.datetime} for patient ID {patient_id.id}."
     elif not appointment_exists:
         return f"No existing appointment found with Dr. {doctor_name} on {old_appointment_datetime.datetime} for patient ID {patient_id.id}."
