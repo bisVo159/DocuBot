@@ -7,7 +7,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langgraph.graph import START, StateGraph, END
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
-from prompt_library.prompts import system_prompt,information_node_template, booking_node_template
+from prompt_library.prompts import system_prompt
 from utils.llms import LLMModel
 from langchain.prompts import PromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
