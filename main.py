@@ -29,18 +29,25 @@ def execute_agent(user_input: UserQuery):
         'patient_id':user_input.patient_id
     }
     def event_generator() -> Generator[str, None, None]:
-        events = app_graph.stream(
-            query_data, 
-            stream_mode="messages",
-            config={
-                "configurable": {
-                "thread_id": user_input.patient_id
-            }
-            })
-        for msg_chunk, _ in events:
-            if isinstance(msg_chunk, ToolMessage): 
-                yield json.dumps({"type": "tool", "tool_name": msg_chunk.name}) + "\n"
-            elif isinstance(msg_chunk, AIMessage):  
-                yield json.dumps({"type": "text", "content": msg_chunk.content}) + "\n"
+        try:
+            events = app_graph.stream(
+                query_data, 
+                stream_mode="messages",
+                config={
+                    "configurable": {
+                    "thread_id": user_input.patient_id
+                }
+                })
+            for msg_chunk, _ in events:
+                try:
+                    if isinstance(msg_chunk, ToolMessage): 
+                        yield json.dumps({"type": "tool", "tool_name": msg_chunk.name}) + "\n"
+                    elif isinstance(msg_chunk, AIMessage):  
+                        yield json.dumps({"type": "text", "content": msg_chunk.content}) + "\n"
+                except Exception as inner_err:
+                    yield json.dumps({"type": "error", "message": str(inner_err)}) + "\n"
+
+        except Exception as outer_err:
+            yield json.dumps({"type": "fatal_error", "message": str(outer_err)}) + "\n"
 
     return StreamingResponse(event_generator(), media_type="application/json")

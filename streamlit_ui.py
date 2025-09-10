@@ -25,43 +25,49 @@ docubot_reply = ""  # running string buffer
 
 # ---- Handle form submission ----
 if submitted and user_input:
-    with requests.post(
-        "http://localhost:8000/execute",
-        json={"patient_id": 1234567, "message": user_input},
-        stream=True,
-    ) as r:
-        for chunk in r.iter_lines():
-            if not chunk:
-                continue
+    try:
+        with requests.post(
+            "http://localhost:8000/execute",
+            json={"patient_id": 1234567, "message": user_input},
+            stream=True,
+        ) as r:
+            if r.status_code != 200:
+                st.error(f"❌ Server returned {r.status_code}: {r.text}")
+            else:
+                for chunk in r.iter_lines():
+                    if not chunk:
+                        continue
 
-            try:
-                data = json.loads(chunk.decode("utf-8"))
-            except Exception as e:
-                st.error(f"Failed to parse chunk: {chunk}")
-                continue
+                    try:
+                        data = json.loads(chunk.decode("utf-8"))
+                    except Exception as e:
+                        st.error(f"Failed to parse chunk: {chunk}")
+                        continue
 
-            # ---- Tool message ----
-            if data.get("type") == "tool":
-                tool_name = data.get("tool_name", "tool")
-                if status_holder["box"] is None:
-                    status_holder["box"] = status_placeholder.status(
-                        f"🔧 Using `{tool_name}` …", expanded=True
-                    )
-                else:
+                    # ---- Tool message ----
+                    if data.get("type") == "tool":
+                        tool_name = data.get("tool_name", "tool")
+                        if status_holder["box"] is None:
+                            status_holder["box"] = status_placeholder.status(
+                                f"🔧 Using `{tool_name}` …", expanded=True
+                            )
+                        else:
+                            status_holder["box"].update(
+                                label=f"🔧 Using `{tool_name}` …",
+                                state="running",
+                                expanded=True,
+                            )
+
+                    # ---- AI text message ----
+                    elif data.get("type") == "text":
+                        content = str(data.get("content", ""))
+                        docubot_reply += content  # ✅ keep appending to one string
+                        chat_area.markdown("**DocuBot:** " + docubot_reply)
+
+                # ---- Mark tool as complete ----
+                if status_holder["box"] is not None:
                     status_holder["box"].update(
-                        label=f"🔧 Using `{tool_name}` …",
-                        state="running",
-                        expanded=True,
+                        label=f"✅ Tool finished", state="complete", expanded=False
                     )
-
-            # ---- AI text message ----
-            elif data.get("type") == "text":
-                content = str(data.get("content", ""))
-                docubot_reply += content  # ✅ keep appending to one string
-                chat_area.markdown("**DocuBot:** " + docubot_reply)
-
-        # ---- Mark tool as complete ----
-        if status_holder["box"] is not None:
-            status_holder["box"].update(
-                label=f"✅ Tool finished", state="complete", expanded=False
-            )
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Connection error: {e}")
