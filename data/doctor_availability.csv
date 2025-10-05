@@ -67,7 +67,7 @@ date_slot,specialization,doctor_name,is_available,patient_to_attend
 08-08-2025 13:30,general_dentist,john doe,True,
 08-08-2025 14:00,general_dentist,john doe,True,
 08-08-2025 14:30,general_dentist,john doe,False,1000057.0
-08-08-2025 15:00,general_dentist,john doe,False,1234567.0
+08-08-2025 15:00,general_dentist,john doe,False,
 08-08-2025 15:30,general_dentist,john doe,True,
 08-08-2025 16:00,general_dentist,john doe,True,
 08-08-2025 16:30,general_dentist,john doe,True,
@@ -485,7 +485,7 @@ date_slot,specialization,doctor_name,is_available,patient_to_attend
 08-08-2025 08:30,general_dentist,emily johnson,True,
 08-08-2025 09:00,general_dentist,emily johnson,False,1000005.0
 08-08-2025 09:30,general_dentist,emily johnson,False,1000041.0
-08-08-2025 10:00,general_dentist,emily johnson,True,
+08-08-2025 10:00,general_dentist,emily johnson,False,3758817.0
 08-08-2025 10:30,general_dentist,emily johnson,True,
 08-08-2025 11:00,general_dentist,emily johnson,True,
 08-08-2025 11:30,general_dentist,emily johnson,True,
@@ -496,7 +496,7 @@ date_slot,specialization,doctor_name,is_available,patient_to_attend
 08-08-2025 14:00,general_dentist,emily johnson,False,1000095.0
 08-08-2025 14:30,general_dentist,emily johnson,True,
 08-08-2025 15:00,general_dentist,emily johnson,False,1000009.0
-08-08-2025 15:30,general_dentist,emily johnson,True,
+08-08-2025 15:30,general_dentist,emily johnson,False,3758817.0
 08-08-2025 16:00,general_dentist,emily johnson,False,1000069.0
 08-08-2025 16:30,general_dentist,emily johnson,True,
 09-08-2025 08:00,general_dentist,emily johnson,False,1000049.0
@@ -1337,7 +1337,7 @@ date_slot,specialization,doctor_name,is_available,patient_to_attend
 07-08-2025 15:30,cosmetic_dentist,lisa brown,True,
 07-08-2025 16:00,cosmetic_dentist,lisa brown,False,1000079.0
 07-08-2025 16:30,cosmetic_dentist,lisa brown,True,
-08-08-2025 08:00,cosmetic_dentist,lisa brown,False,12345678.0
+08-08-2025 08:00,cosmetic_dentist,lisa brown,False,
 08-08-2025 08:30,cosmetic_dentist,lisa brown,True,
 08-08-2025 09:00,cosmetic_dentist,lisa brown,False,1000032.0
 08-08-2025 09:30,cosmetic_dentist,lisa brown,True,
