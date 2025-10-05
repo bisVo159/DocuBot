@@ -57,39 +57,39 @@ query_classifier_prompt=(
         """
         """
         Output Format
-            {
+            {{
                 "next_node": "end" | "supervisor_node",
                 "answer": "Only required if next_node is 'end'",
                 "rephrased_query": "Only required if next_node is 'supervisor_node'"
-            }
+            }}
             Example 1 – Greeting:
             Patient: “Hi”
 
-            {
+            {{
             "next_node": "end",
             "answer": "Hello! How can I help you with your doctor appointments today?"
-            }
+            }}
             Example 2 – Book Appointment (with patient_id):
             Patient: “Book me an appointment with a cardiologist” (patient_id = 12345)
 
-            {
+            {{
             "next_node": "supervisor_node",
             "rephrased_query": "Book an appointment with a cardiologist for patient_id 12345"
-            }
+            }}
             Example 3 – Doctor Availability:
             Patient: “Is Dr. Sharma available tomorrow?”
 
-            {
+            {{
             "next_node": "supervisor_node",
             "rephrased_query": "Check availability of Dr. Sharma tomorrow"
-            }
+            }}
             Example 4 – Out of domain:
             Patient: “What’s the weather today?”
 
-            {
+            {{
             "next_node": "end",
             "answer": "I’m sorry, I can only help with doctor appointments."
-            }
+            }}
         """
     )
 

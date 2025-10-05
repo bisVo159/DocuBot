@@ -11,9 +11,13 @@ class LLMModel:
         self.model_name= model_name
         self.gemini_model= ChatGoogleGenerativeAI(model=model_name,temperature=temperature)
         self.groq_model=ChatGroq(model="llama-3.1-8b-instant")
+        self.gemini_model_latest=ChatGoogleGenerativeAI(model="gemini-2.5-flash-preview-09-2025")
 
     def get_gemini_model(self):
         return self.gemini_model
+    
+    def get_gemini_model_latest(self):
+        return self.gemini_model_latest
     
     def get_groq_model(self):
         return self.groq_model
