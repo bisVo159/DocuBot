@@ -31,3 +31,6 @@ Thumbs.db
 
 # LangGraph cache or temp files (if any)
 *.cache
+
+# database
+*.db
