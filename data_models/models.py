@@ -1,5 +1,5 @@
 import re
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, EmailStr
 
 class DateTimeModel(BaseModel):
     datetime: str = Field(..., description="A date-time string in the format DD-MM-YYYY HH:MM",pattern=r'^\d{2}-\d{2}-\d{4} \d{2}:\d{2}$')
@@ -28,3 +28,17 @@ class IdentificationNumberModel(BaseModel):
         if not re.match(r'^\d{7,8}$', str(v)): 
             raise ValueError("The ID number should be a 7 or 8-digit number")
         return v
+    
+class SignupRequest(BaseModel):
+    fullname: str
+    email: EmailStr
+    password: str
+
+class SignupResponse(BaseModel):
+    patient_id: int
+    fullname: str
+    email: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
