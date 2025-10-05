@@ -1,4 +1,4 @@
-from typing import Literal, List, Any
+from typing import Literal, Optional, Any
 from langchain_core.tools import tool
 from langgraph.types import Command
 from langgraph.graph.message import add_messages
@@ -7,9 +7,8 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langgraph.graph import START, StateGraph, END
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
-from prompt_library.prompts import system_prompt
+from prompt_library.prompts import system_prompt, query_classifier_prompt
 from utils.llms import LLMModel
-from langchain.prompts import PromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
 from toolkit.tools import *
 
@@ -31,10 +30,23 @@ class Router(BaseModel):
         )
     )
 
+class query_classifierRoute(BaseModel):
+    next_node: Literal["supervisor_node", "end"] = Field(
+        ..., description="Determines the next node in the agent flow"
+    )
+    answer: Optional[str] = Field(
+        None,
+        description="Only filled if next_node is 'end'. Contains the assistant's reply to the user"
+    )
+    rephrased_query: Optional[str] = Field(
+        None,
+        description="Only filled if next_node is 'supervisor_node'. Contains the rewritten standalone query. Include patient_id if required"
+    )
+
 class AgentState(TypedDict):
     messages: Annotated[list[Any], add_messages]
-    patient_id: int
     query: str
+    patient_id: int
     rephrased_query: str
     current_reasoning: str
 
@@ -42,53 +54,57 @@ class DoctorAppointmentAgent:
     def __init__(self):
         llm_model = LLMModel()
         self.gemini_model=llm_model.get_gemini_model()
+        self.gemini_model_latest=llm_model.get_gemini_model_latest()
         self.groq_model=llm_model.get_groq_model()
 
-    def query_rewriter(self, state: AgentState) -> Command[Literal['supervisor']]:
+    def query_classifier(self,state: AgentState) -> Command[Literal['supervisor','__end__']]:
         message_history = state['messages']
         user_query = state['query']
         patient_id = state['patient_id']
-        query_rewriter_prompt = """
-        You are a helpful assistant that rephrases the user's question to be a standalone question
-        You will receive:
-        - patient_id
-        - conversation history
-        - the latest user query
 
-        Rephrase the user query into a clearer and more meaningful version. 
-        Always include the patient_id in the rewritten query.
-        """
-
-        query_rewriter_prompt = ChatPromptTemplate(
+        prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", query_rewriter_prompt),
+                ("system", query_classifier_prompt),
                 ("placeholder", "{messages}"),   
                 ("human", "User query: {user_query}"),
                 ("human", "patient_id: {patient_id}"),
             ]
         )
 
-        chain= query_rewriter_prompt | self.gemini_model
-        result= chain.invoke({
+        chain= prompt | self.gemini_model.with_structured_output(query_classifierRoute)
+        result:query_classifierRoute= chain.invoke({
             "messages": message_history,
             "user_query": user_query,
             "patient_id": patient_id
         })
-        
-        return Command(
-            update={
-                "messages": [
-                    HumanMessage(content=result.content, name="query_rewriter_node")
-                ],
-                "rephrased_query": result.content,
-            },
-            goto="supervisor",
-        )
+
+        if result.next_node == "end":
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(content=user_query, name="query_classifier_node"),
+                        AIMessage(content=result.answer, name="query_classifier_node")
+                    ],
+                    "current_reasoning": f"Routed to end because: {result.answer}",
+                },
+                goto="__end__",
+            )
+        else:
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(content=result.rephrased_query, name="query_classifier_node")
+                    ],
+                    "rephrased_query": result.rephrased_query,
+                    "current_reasoning": f"Routed to supervisor_node because: {result.rephrased_query}",
+                },
+                goto="supervisor",
+            )
     
+
     def supervisor_node(self, state:AgentState) -> Command[Literal['information_node', 'booking_node', '__end__']]:
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"user's identification number is {state['patient_id']}"},
         ] + state["messages"]
         
         last_msg = state['messages'][-1] if state["messages"] else None
@@ -127,7 +143,7 @@ class DoctorAppointmentAgent:
             )
 
         information_agent = create_react_agent(
-            model=self.gemini_model,
+            model=self.gemini_model_latest,
             tools=[check_availability_by_doctor,check_availability_by_specialization] ,
             prompt=system_prompt)
         
@@ -157,7 +173,7 @@ class DoctorAppointmentAgent:
                 ]
             )
         booking_agent = create_react_agent(
-            model=self.gemini_model,
+            model=self.gemini_model_latest,
             tools=[book_appointment,cancel_appointment,reschedule_appointment],
             prompt=system_prompt)
         
@@ -173,10 +189,10 @@ class DoctorAppointmentAgent:
     
     def workflow(self):
         self.graph = StateGraph(AgentState)
-        self.graph.add_node("query_rewriter", self.query_rewriter)
+        self.graph.add_node("query_classifier", self.query_classifier)
         self.graph.add_node("supervisor", self.supervisor_node)
         self.graph.add_node("information_node", self.information_node)
         self.graph.add_node("booking_node", self.booking_node)
-        self.graph.add_edge(START, "query_rewriter")
+        self.graph.add_edge(START, "query_classifier")
         self.app = self.graph.compile(checkpointer=memory)
         return self.app
