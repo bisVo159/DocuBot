@@ -122,11 +122,10 @@ class DoctorAppointmentAgent:
         
         return Command(goto=goto, 
                     update={
-            'current_reasoning': response.reasoning, 
-            'messages': [AIMessage(content=response.reasoning, name="supervisor_node")]
+            'current_reasoning': response.reasoning
             })
 
-    def information_node(self,state:AgentState) -> Command[Literal['supervisor']]:
+    def information_node(self,state:AgentState) -> Command[Literal['__end__']]:
         system_prompt = "You are specialized agent to provide information related to availability of doctors or any FAQs related to hospital based on the query. You have access to the tool.\n Make sure to ask user politely if you need any further information to execute the tool.\n For your information."
 
         system_prompt = ChatPromptTemplate(
@@ -151,12 +150,12 @@ class DoctorAppointmentAgent:
         
         return Command(
             update={
-                "messages": result["messages"]
+                "messages": result["messages"][-1]
             },
-            goto="supervisor"
+            goto="__end__"
         )
     
-    def booking_node(self,state:AgentState) ->  Command[Literal['supervisor']]:
+    def booking_node(self,state:AgentState) ->  Command[Literal['__end__']]:
         
         system_prompt = "You are specialized agent to set, cancel or reschedule appointment based on the query. You have access to the tool.\n Make sure to ask user politely if you need any further information to execute the tool.\n For your information."
         
@@ -182,9 +181,9 @@ class DoctorAppointmentAgent:
         
         return Command(
             update={
-                "messages": result["messages"]
+                "messages": result["messages"][-1]
             },
-            goto="supervisor"
+            goto="__end__"
         )
     
     def workflow(self):
