@@ -16,4 +16,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES : int = 60*24
     COOKIE_NAME : str
 
+    SMTP_SERVER : str
+    SMTP_PORT : int
+    SMTP_USER : str
+    SMTP_PASSWORD : str
+
 settings = Settings()

@@ -1,16 +1,16 @@
 from typing import  Literal
 
 DoctorName = Literal[
-    "kevin anderson",
-    "robert martinez",
-    "susan davis",
-    "daniel miller",
-    "sarah wilson",
-    "michael green",
-    "lisa brown",
-    "jane smith",
-    "emily johnson",
-    "john doe"
+    "Soumya Chatterjee",
+    "Rituparna Sen",
+    "Farhan Ali",
+    "Suman Das",
+    "Imran Hossain",
+    "Arindam Biswas",
+    "Md. Saifur Rahman",
+    "Anirban Mukherjee",
+    "Isha Roy",
+    "Dibakar Basu"
 ]
 
 Specialization= Literal[
