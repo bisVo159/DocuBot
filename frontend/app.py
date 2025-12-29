@@ -27,15 +27,27 @@ def main():
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        status_holder = {"box": None}
-        status_placeholder = st.empty()
-        chat_area = st.chat_message("assistant").empty()
-        try:
-            chat_with_backend_agent(fastapi_base_url, prompt,chat_area,status_holder,status_placeholder)
-        except requests.exceptions.RequestException as e:
-            st.error(f"❌ Connection error: {e}")
-        except Exception as e:
-            st.error(f"❌ An error occurred: {e}")
+        with st.chat_message("assistant"):
+            # 1. Placeholder for the Tool Status Box (appears at the top of the bubble)
+            status_placeholder = st.empty()
+            # 2. Placeholder for the actual text response
+            chat_area = st.empty()
+            
+            # Dictionary to keep reference to the status box object
+            status_holder = {"box": None}
+
+            try:
+                chat_with_backend_agent(
+                    fastapi_base_url, 
+                    prompt, 
+                    chat_area, 
+                    status_holder, 
+                    status_placeholder
+                )
+            except requests.exceptions.RequestException as e:
+                st.error(f"❌ Connection error: {e}")
+            except Exception as e:
+                st.error(f"❌ An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
