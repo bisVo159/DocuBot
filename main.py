@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from agent import DoctorAppointmentAgent
-from langchain_core.messages import ToolMessage, AIMessage
+from langchain_core.messages import ToolMessage, AIMessage, AIMessageChunk
 from data_models.userQuery import UserQuery
 from data_models.models import SignupRequest, SignupResponse, TokenResponse
 from db.database import get_db, Base, engine
@@ -61,7 +61,9 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
     if not patient or not verify_password(form_data.password, patient.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = create_access_token({"patient_id": patient.patient_id})
+    token = create_access_token({
+        "patient_id": patient.patient_id
+    })
 
     response.set_cookie(
         key=settings.COOKIE_NAME,
@@ -82,11 +84,11 @@ def logout(response: Response):
 @app.post("/execute")
 def execute_agent(user_input: UserQuery, patient_id: int = Depends(get_current_patient_id)):
     query_data = {
-        'query': user_input.message,
-        'patient_id': patient_id
+        'query': user_input.message
     }
     def event_generator() -> Generator[str, None, None]:
         try:
+            seen_tool_ids = set()
             events = app_graph.stream(
                 query_data, 
                 stream_mode="messages",
@@ -97,10 +99,22 @@ def execute_agent(user_input: UserQuery, patient_id: int = Depends(get_current_p
                 })
             for msg_chunk, _ in events:
                 try:
-                    if isinstance(msg_chunk, ToolMessage): 
-                        yield json.dumps({"type": "tool", "tool_name": msg_chunk.name}) + "\n"
-                    elif isinstance(msg_chunk, AIMessage):  
-                        yield json.dumps({"type": "text", "content": msg_chunk.content}) + "\n"
+                    if isinstance(msg_chunk, AIMessage):
+                        if hasattr(msg_chunk, 'tool_call_chunks') and msg_chunk.tool_call_chunks:
+                            for chunk in msg_chunk.tool_call_chunks:
+                                if chunk.get("name") and chunk.get("id") and chunk["id"] not in seen_tool_ids:
+                                    seen_tool_ids.add(chunk["id"])
+                                    yield json.dumps({
+                                        "type": "tool", 
+                                        "tool_name": f'{chunk["name"]} node'
+                                    }) + "\n"
+                        if msg_chunk.content:
+                            yield json.dumps({
+                                "type": "text", 
+                                "content": str(msg_chunk.content)
+                            }) + "\n"
+                    elif isinstance(msg_chunk, ToolMessage): 
+                        yield json.dumps({"type": "tool", "tool_name": f'{msg_chunk.name} tool'}) + "\n"
                 except Exception as inner_err:
                     yield json.dumps({"type": "error", "message": str(inner_err)}) + "\n"
 
