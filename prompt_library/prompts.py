@@ -14,39 +14,26 @@ system_prompt = (
     "You are a supervisor tasked with managing a conversation between the following workers. "
     "### SPECIALIZED ASSISTANT:\n"
     f"{worker_info}\n\n"
-    "Your primary role is to help the user make an appointment with a doctor and provide updates on FAQs and doctor availability. "
-    "If the user requests information about doctors or hospital FAQs, delegate to the information_node. "
+    "Your primary role is to help the user make an appointment with a doctor and provide updates on FAQs and doctor or specialization availability. "
+    "If the user requests information about doctors or specializations FAQs, delegate to the information_node. "
     "If the user wants to book, cancel, or reschedule an appointment, delegate to the booking_node. "
-    "Each worker will perform its task and return results. "
-    "When all tasks are complete and the user query is resolved, respond with FINISH.\n\n"
-
-    "**IMPORTANT RULES:**\n"
-    "1. If the user's query is fully answered and no further action is required, respond with FINISH.\n"
-    "2. If the conversation becomes repetitive, circular, or unproductive, respond with FINISH.\n"
-    "3. If the conversation exceeds 10 steps, respond with FINISH to prevent infinite loops.\n"
-    "4. Always consider the last worker response and previous context to determine if the user’s intent has been satisfied. "
-    "If it has, respond with FINISH.\n"
 )
 
 query_classifier_prompt=(
         "You are an intelligent routing agent designed to direct user queries to the most appropriate tool."
         """
         You will receive:
-            - patient_id
-            - conversation history
             - the latest user query"""
         "Your job is to classify and handle patient queries"
         """
         Routing Rules:
             1. If the query is related to doctor tasks, choose supervisor_node:
+            getting information about doctors or specializations FAQs.
             Checking doctor availability (by doctor name or specialization).
             Booking an appointment.
             Canceling an appointment.
             Rescheduling an appointment.
             When routing to supervisor_node:
-            Always rephrase the query into a clear standalone question.
-            If the task requires a patient_id (book, cancel, reschedule), explicitly include the patient_id in the rewritten query.
-            If the task does not require a patient_id, do not include it.
 
             2. If the query is NOT related to doctor tasks, choose end:
             For greetings or small talk (e.g., “Hi”, “How are you?”).
@@ -60,7 +47,6 @@ query_classifier_prompt=(
             {{
                 "next_node": "end" | "supervisor_node",
                 "answer": "Only required if next_node is 'end'",
-                "rephrased_query": "Only required if next_node is 'supervisor_node'"
             }}
             Example 1 – Greeting:
             Patient: “Hi”
@@ -69,19 +55,17 @@ query_classifier_prompt=(
             "next_node": "end",
             "answer": "Hello! How can I help you with your doctor appointments today?"
             }}
-            Example 2 – Book Appointment (with patient_id):
-            Patient: “Book me an appointment with a cardiologist” (patient_id = 12345)
+            Example 2 – Book Appointment:
+            Patient: “Book me an appointment with a cardiologist”
 
             {{
             "next_node": "supervisor_node",
-            "rephrased_query": "Book an appointment with a cardiologist for patient_id 12345"
             }}
             Example 3 – Doctor Availability:
             Patient: “Is Dr. Sharma available tomorrow?”
 
             {{
             "next_node": "supervisor_node",
-            "rephrased_query": "Check availability of Dr. Sharma tomorrow"
             }}
             Example 4 – Out of domain:
             Patient: “What’s the weather today?”
